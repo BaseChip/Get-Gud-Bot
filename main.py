@@ -4,6 +4,7 @@ import KEYS
 import os
 import sqlite3
 import random
+import string
 
 conn = sqlite3.connect("database.db")
 cur = conn.cursor()
@@ -696,8 +697,8 @@ class MyClient(discord.Client):
                 arole = discord.utils.get(message.guild.roles, id=411811516954836993)
                 for meb in arole.members:
                     if meb.id == message.author.id:
-                        chan = message.guild.get_channel()
-                        await chan.send(content="You are required to do a gg.token or gg.tokenreward @here")
+                        adminchan = message.guild.get_channel()
+                        await adminchan.send(content="You are required to do a gg.token or gg.tokenreward @here")
                         await nachricht("An admin has been messaged regarding the Token Prize.", message.channel.id)
             elif invoke == "rking":
                 chan = message.channel.id
@@ -777,9 +778,116 @@ class MyClient(discord.Client):
                 def c(m):
                     if m.author.id == message.author.id and m.channel.id == message.channel.id:
                         return m
-                
-
-
+                await message.channel.send("Which of the 5 Shop items would you like to buy?")
+                ent = await client.wait_for("message", check=c, timeout=None)
+                if ent=="1":
+                    try:
+                        cur.execute("SELECT preis FROM store1")
+                        preis = cur.fetchone()[0]
+                        cur.execute("SELECT ggtokens FROM tokens WHERE userid=?", (message.author.id,))
+                        tokens = cur.fetchone()[0]
+                        if tokens-preis > 0:
+                            await message.channel.send("Are you sure you want to buy this? Y/N")
+                            yn = await client.wait_for("message", check=c, timeout=None)
+                            if yn == "y":
+                                tzt = tokens-preis
+                                cur.execute("UPDATE tokens SET ggtokens=? WHERE userid=?", (tzt, message.author.id))
+                                conn.commit()
+                                code=str(random.randint(0, 9))+str(random.randint(0, 9))+random.choice(string.ascii_uppercase)
+                                await message.author.send(content="Succesfull! Your Code is: %s" % (code))
+                                adminchan = message.guild.get_channel()
+                                await adminchan.send(content="The User %s has generated the code `%s` for the store1" % (message.author.name, code))
+                    except:
+                        await message.channel.send(
+                            content="Either this entry has not been made or you don't have enough money.")
+                elif ent == "2":
+                    try:
+                        cur.execute("SELECT preis FROM store2")
+                        preis = cur.fetchone()[0]
+                        cur.execute("SELECT ggtokens FROM tokens WHERE userid=?", (message.author.id,))
+                        tokens = cur.fetchone()[0]
+                        if tokens - preis > 0:
+                            await message.channel.send("Are you sure you want to buy this? Y/N")
+                            yn = await client.wait_for("message", check=c, timeout=None)
+                            if yn == "y":
+                                tzt = tokens - preis
+                                cur.execute("UPDATE tokens SET ggtokens=? WHERE userid=?", (tzt, message.author.id))
+                                conn.commit()
+                                code = str(random.randint(0, 9)) + str(random.randint(0, 9)) + random.choice(
+                                    string.ascii_uppercase)
+                                await message.author.send(content="Succesfull! Your Code is: %s" % (code))
+                                adminchan = message.guild.get_channel()
+                                await adminchan.send(
+                                    content="The User %s has generated the code `%s` for the store1" % (
+                                    message.author.name, code))
+                    except:
+                        await message.channel.send(content="Either this entry has not been made or you don't have enough money.")
+                elif ent == "3":
+                    try:
+                        cur.execute("SELECT preis FROM store3")
+                        preis = cur.fetchone()[0]
+                        cur.execute("SELECT ggtokens FROM tokens WHERE userid=?", (message.author.id,))
+                        tokens = cur.fetchone()[0]
+                        if tokens - preis > 0:
+                            await message.channel.send("Are you sure you want to buy this? Y/N")
+                            yn = await client.wait_for("message", check=c, timeout=None)
+                            if yn == "y":
+                                tzt = tokens - preis
+                                cur.execute("UPDATE tokens SET ggtokens=? WHERE userid=?", (tzt, message.author.id))
+                                conn.commit()
+                                code = str(random.randint(0, 9)) + str(random.randint(0, 9)) + random.choice(
+                                    string.ascii_uppercase)
+                                await message.author.send(content="Succesfull! Your Code is: %s" % (code))
+                                adminchan = message.guild.get_channel()
+                                await adminchan.send(
+                                    content="The User %s has generated the code `%s` for the store1" % (
+                                    message.author.name, code))
+                    except:
+                        await message.channel.send(content="Either this entry has not been made or you don't have enough money.")
+                elif ent == "4":
+                    try:
+                        cur.execute("SELECT preis FROM store4")
+                        preis = cur.fetchone()[0]
+                        cur.execute("SELECT ggtokens FROM tokens WHERE userid=?", (message.author.id,))
+                        tokens = cur.fetchone()[0]
+                        if tokens - preis > 0:
+                            await message.channel.send("Are you sure you want to buy this? Y/N")
+                            yn = await client.wait_for("message", check=c, timeout=None)
+                            if yn == "y":
+                                tzt = tokens - preis
+                                cur.execute("UPDATE tokens SET ggtokens=? WHERE userid=?", (tzt, message.author.id))
+                                conn.commit()
+                                code = str(random.randint(0, 9)) + str(random.randint(0, 9)) + random.choice(
+                                    string.ascii_uppercase)
+                                await message.author.send(content="Succesfull! Your Code is: %s" % (code))
+                                adminchan = message.guild.get_channel()
+                                await adminchan.send(
+                                    content="The User %s has generated the code `%s` for the store1" % (
+                                    message.author.name, code))
+                    except:
+                        await message.channel.send(content="Either this entry has not been made or you don't have enough money.")
+                elif ent == "5":
+                    try:
+                        cur.execute("SELECT preis FROM store5")
+                        preis = cur.fetchone()[0]
+                        cur.execute("SELECT ggtokens FROM tokens WHERE userid=?", (message.author.id,))
+                        tokens = cur.fetchone()[0]
+                        if tokens - preis > 0:
+                            await message.channel.send("Are you sure you want to buy this? Y/N")
+                            yn = await client.wait_for("message", check=c, timeout=None)
+                            if yn == "y":
+                                tzt = tokens - preis
+                                cur.execute("UPDATE tokens SET ggtokens=? WHERE userid=?", (tzt, message.author.id))
+                                conn.commit()
+                                code = str(random.randint(0, 9)) + str(random.randint(0, 9)) + random.choice(
+                                    string.ascii_uppercase)
+                                await message.author.send(content="Succesfull! Your Code is: %s" % (code))
+                                adminchan = message.guild.get_channel()
+                                await adminchan.send(
+                                    content="The User %s has generated the code `%s` for the store1" % (
+                                    message.author.name, code))
+                    except:
+                        await message.channel.send(content="Either this entry has not been made or you don't have enough money.")
 
                         # EXAMPLE
                         '''
