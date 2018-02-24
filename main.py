@@ -34,6 +34,29 @@ async def sendmsg(message, channel, dtime):
 
 async def ev(title, des, days, houres, minutes, reward):
     try:
+        print("ev1")
+        cou = 0
+        d = int(days)
+        h = int(houres)
+        m = int(minutes)
+        while d > 0:
+            cou = cou + 86400
+            d = d -1
+            print("ev2")
+        while h > 0:
+            cou = cou + 3600
+            h = h -1
+            print("ev3")
+        while m > 0:
+            cou = cou + 60
+            m = m-1
+            print("ev4")
+        print(cou)
+        await nachricht("A new event %s has been created in %s days and %sh:%sm @here" % (title, days, houres, minutes), 411821497578029056)
+        await asyncio.sleep(cou)
+        chan = client.get_channel(415845094521044992)
+        await chan.send(content="The event %s is over please announce a winner with gg.winner" % (title))
+        '''
         finished = False
         global evtitle
         evtitle = title
@@ -42,29 +65,35 @@ async def ev(title, des, days, houres, minutes, reward):
         global evd
         global evh
         global evm
-        evd = days
         evh = houres
-        evm = minutes
-        d = evd
-        h = evh
-        m = evm
+        evd = days
+        d = days
+        h = houres
+        m = minutes
         n = 0
+        await nachricht("A new event %s has been created in %s days and %sh:%sm" % (title, days, houres, minutes), 411821497578029056)
         while finished == False:
             if m != 0:
                 m = m - 1
+                global evm
                 evm = m
                 await asyncio.sleep(60)
             elif m == 0:
                 if h != 0:
                     h = h - 1
                     m = 60
+                    global evm
                     evm = m
+                    global evh
                     evh = h
                 elif h == 0:
                     if d != 0:
                         d = d - 1
                         h = 23
                         m = 60
+                        global evd
+                        global evh
+                        global evm
                         evm = m
                         evh = h
                         evd = d
@@ -80,10 +109,12 @@ async def ev(title, des, days, houres, minutes, reward):
                             if counter==win:
                                 global winner
                                 winner = [memb.mention, memb.name, memb.id]
-                            counter += 1
+                                await nachricht("Hey %s you have won the event %s" % (winner[0], title), 411821497578029056)
+                            counter += 1 '''
 
 
-    except:
+    except Exception as e:
+        print(e)
         return False
 
 
@@ -167,6 +198,7 @@ class MyClient(discord.Client):
         cur.execute("CREATE TABLE IF NOT EXISTS store3 (preis INTEGER)")
         cur.execute("CREATE TABLE IF NOT EXISTS store4 (preis INTEGER)")
         cur.execute("CREATE TABLE IF NOT EXISTS store5 (preis INTEGER)")
+        cur.execute("CREATE TABLE IF NOT EXISTS voting (canvote INTEGER, hasvoted INTEGER)")
         print("Bot is ready\n===")
 
     async def on_message(self, message):
@@ -187,6 +219,9 @@ class MyClient(discord.Client):
                         str(tokens))
                     chan = message.channel.id
                     await sendmsg(msg, chan, 10)
+                else:
+                    chan = message.channel.id
+                    await sendmsg("Sorry you have no GG Tokens!", chan, 20)
 
             if invoke == "setup" and message.guild.owner_id == message.author.id:
                 com = (message.content).replace("gg.setup", "")
@@ -199,7 +234,8 @@ class MyClient(discord.Client):
                 if com.startswith(" store"):
                     chan = message.channel.id
                     await nachricht("Which entry do you want to edit/create (1-5)", chan)
-                    entery = await client.wait_for("message", check=c, timeout=None)
+                    enter = await client.wait_for("message", check=c, timeout=None)
+                    entery = enter.content
                     if entery=="1":
                         await message.channel.send(content="Please send me now the ggtoken amount")
                         amm = await client.wait_for("message", check=c, timeout=None)
@@ -362,7 +398,7 @@ class MyClient(discord.Client):
                     await nachricht("In how many minutes?", chan)
                     min = await client.wait_for("message", check=c, timeout=None)
                     minutes = min.content
-                    await nachricht("Please send me now the gg token reward")
+                    await nachricht("Please send me now the gg token reward", chan)
                     re = await client.wait_for("message", check=c, timeout=None)
                     reward = re.content
                     e = await autev1(name, desc, days, houre, minutes, reward)
@@ -516,10 +552,10 @@ class MyClient(discord.Client):
                     if m.author.id == message.author.id and m.channel.id == message.channel.id:
                         return m
                 chan = message.channel.id
-                await nachricht("Please send me now the id from the user you want to add the ggtokens", chan)
+                await nachricht("Please send me now the id from the user you want to remove the ggtokens", chan)
                 yo = await client.wait_for("message", check=c, timeout=None)
                 yon = yo.content
-                await nachricht("How many tokens should i add?", chan)
+                await nachricht("How many tokens should i remove?", chan)
                 tok = await client.wait_for("message", check=c, timeout=None)
                 token = int(tok.content)
                 cur.execute("SELECT ggtokens FROM tokens WHERE userid=?", (int(yon),))
@@ -533,11 +569,25 @@ class MyClient(discord.Client):
                     if newtoken > 0:
                         cur.execute("UPDATE tokens SET ggtokens=? WHERE userid=?", (newtoken, int(yon)))
                         conn.commit()
-                        await nachricht("Success, GG Tokens have been sent!", chan)
+                        await nachricht("Success, GG Tokens have been removed!", chan)
                     else:
                         await nachricht("Sorry, i cant remove this user this amount, because the user dosnt have %s tokens "%(token), chan)
 
             # @everyone
+            if invoke == "tokenmember":
+                yon = (message.content).replace("gg.tokenmember", "")
+                chan = message.channel.id
+                if yon != "":
+                    cur.execute("SELECT ggtokens FROM tokens WHERE userid=?", (int(yon),))
+                    ex = cur.fetchall()
+                    if str(ex) == "[]":
+                        await nachricht("this user doesnt have tokens", chan)
+                    else:
+                        cur.execute("SELECT ggtokens FROM tokens WHERE userid=?", (int(yon),))
+                        toke = cur.fetchone()[0]
+                        await message.channel.send(content="The User has %s ggtokens" % (toke))
+                else:
+                    await message.channel.sennd(content="gg.tokenmember [id]")
             elif invoke == "nextevent":
                 try:
                     chan = message.channel.id
@@ -636,7 +686,7 @@ class MyClient(discord.Client):
                             arole = discord.utils.get(message.guild.roles, id=roleid)
                             mem = message.guild.get_member(meid)
                             await mem.add_roles(arole, reason="gg.king by " + message.author.name)
-                            await nachricht("Congratulations %s you have won the the King Role till the next King Event! You have now access to your own chat room and voice channel for you and your team!" % (mem.mention), chan)
+                            await nachricht("Congratulations %s you have won the the King Role till the next King Event! You have now access to your own chat room and voice channel for you and your team!" % (mem.mention), 392983553912209411)
                         else:
                             await nachricht("No role defined in gg.setup", chan)
                     except Exception as e:
@@ -665,7 +715,7 @@ class MyClient(discord.Client):
                                     await mem.add_roles(arole, reason="gg.king by " + message.author.name)
                                     await nachricht(
                                         "Congratulations %s you have won the the King Role till the next King Event! You have now access to your own chat room and voice channel for you and your team!" % (
-                                            mem.mention), chan)
+                                            mem.mention), 392983553912209411)
                                 else:
                                     await nachricht("No role defined in gg.setup", chan)
                             except Exception as e:
@@ -675,29 +725,36 @@ class MyClient(discord.Client):
                 arole = discord.utils.get(message.guild.roles, id=411811474780979201)
                 for meb in arole.members:
                     if meb.id == message.author.id:
-                        if winner[2] != None:
-                            await nachricht("Congratulations to %s on winning the last event" % (winner[0]), message.channel.id)
-                        else:
-                            await nachricht("There is **no** last event", message.channel)
+                        def c(m):
+                            if m.author.id == message.author.id and m.channel.id == message.channel.id:
+                                return m
+                        await message.channel.send(content="Please send me the userid From the winner")
+                        cid = await client.wait_for("message", check=c, timeout=None)
+                        id = cid.content
+                        usr = message.guild.get_member(int(id))
+                        print(usr)
+                        await nachricht("Congratulations to %s on winning the Event! You have been rewarded with 100 GG Tokens!" % (usr.mention), 411821497578029056)
+
 
             elif invoke=="banner":
-                arole = discord.utils.get(message.guild.roles, id=411811474780979201)
+                arole = discord.utils.get(message.guild.roles, id=411811516954836993)
                 for meb in arole.members:
                     if meb.id == message.author.id:
                         def c(m):
                             if m.author.id == message.author.id and m.channel.id == message.channel.id:
                                 return m
-                        await message.channel.send("Please send me now the link to the header")
+                        await message.channel.send("Please send me now the header")
                         url = await client.wait_for("message", check=c, timeout=None)
                         await message.channel.send("Please send me now the text for the message")
                         text = await client.wait_for("message", check=c, timeout=None)
-                        await message.channel.send(embed=discord.Embed(description=text).set_thumbnail(url=url))
+                        chan = message.guild.get_channel(392983553912209411)
+                        await chan.send(content="**%s**\n%s" % (url.content, text.content))
 
             elif invoke=="tokenpayup":
                 arole = discord.utils.get(message.guild.roles, id=411811516954836993)
                 for meb in arole.members:
                     if meb.id == message.author.id:
-                        adminchan = message.guild.get_channel()
+                        adminchan = message.guild.get_channel(415845094521044992)
                         await adminchan.send(content="You are required to do a gg.token or gg.tokenreward @here")
                         await nachricht("An admin has been messaged regarding the Token Prize.", message.channel.id)
             elif invoke == "rking":
@@ -722,7 +779,7 @@ class MyClient(discord.Client):
                             await mem.remove_roles(arole, reason="gg.king by " + message.author.name)
                             await nachricht(
                                 "It’s time to pass the title on %s you have been removed from the King Role!" % (
-                                    mem.mention), chan)
+                                    mem.mention), 392983553912209411)
                         else:
                             await nachricht("No role defined in gg.setup", chan)
                     except Exception as e:
@@ -752,7 +809,7 @@ class MyClient(discord.Client):
                                     await mem.remove_roles(arole, reason="gg.king by " + message.author.name)
                                     await nachricht(
                                         "It’s time to pass the title on %s you have been removed from the King Role!" % (
-                                            mem.mention), chan)
+                                            mem.mention), 392983553912209411)
                                 else:
                                     await nachricht("No role defined in gg.setup", chan)
                             except Exception as e:
@@ -767,7 +824,7 @@ class MyClient(discord.Client):
                 arole = discord.utils.get(message.guild.roles, id=411811516954836993)
                 for meb in arole.members:
                     if meb.id == message.author.id:
-                        getguid = await client.get_guild(392983553912209409)
+                        getguid = client.get_guild(392983553912209409)
                         win = random.randint(0, len(getguid.members))
                         counter = 0
                         for memb in getguid.members:
@@ -789,13 +846,13 @@ class MyClient(discord.Client):
                         if tokens-preis > 0:
                             await message.channel.send("Are you sure you want to buy this? Y/N")
                             yn = await client.wait_for("message", check=c, timeout=None)
-                            if yn == "y":
+                            if yn.content == "y":
                                 tzt = tokens-preis
                                 cur.execute("UPDATE tokens SET ggtokens=? WHERE userid=?", (tzt, message.author.id))
                                 conn.commit()
                                 code=str(random.randint(0, 9))+str(random.randint(0, 9))+random.choice(string.ascii_uppercase)
                                 await message.author.send(content="Succesfull! Your Code is: %s" % (code))
-                                adminchan = message.guild.get_channel()
+                                adminchan = message.guild.get_channel(415845094521044992)
                                 await adminchan.send(content="The User %s has generated the code `%s` for the store1" % (message.author.name, code))
                     except:
                         await message.channel.send(
@@ -809,14 +866,14 @@ class MyClient(discord.Client):
                         if tokens - preis > 0:
                             await message.channel.send("Are you sure you want to buy this? Y/N")
                             yn = await client.wait_for("message", check=c, timeout=None)
-                            if yn == "y":
+                            if yn.content == "y":
                                 tzt = tokens - preis
                                 cur.execute("UPDATE tokens SET ggtokens=? WHERE userid=?", (tzt, message.author.id))
                                 conn.commit()
                                 code = str(random.randint(0, 9)) + str(random.randint(0, 9)) + random.choice(
                                     string.ascii_uppercase)
                                 await message.author.send(content="Succesfull! Your Code is: %s" % (code))
-                                adminchan = message.guild.get_channel()
+                                adminchan = message.guild.get_channel(415845094521044992)
                                 await adminchan.send(
                                     content="The User %s has generated the code `%s` for the store1" % (
                                     message.author.name, code))
@@ -831,14 +888,14 @@ class MyClient(discord.Client):
                         if tokens - preis > 0:
                             await message.channel.send("Are you sure you want to buy this? Y/N")
                             yn = await client.wait_for("message", check=c, timeout=None)
-                            if yn == "y":
+                            if yn.content == "y":
                                 tzt = tokens - preis
                                 cur.execute("UPDATE tokens SET ggtokens=? WHERE userid=?", (tzt, message.author.id))
                                 conn.commit()
                                 code = str(random.randint(0, 9)) + str(random.randint(0, 9)) + random.choice(
                                     string.ascii_uppercase)
                                 await message.author.send(content="Succesfull! Your Code is: %s" % (code))
-                                adminchan = message.guild.get_channel()
+                                adminchan = message.guild.get_channel(415845094521044992)
                                 await adminchan.send(
                                     content="The User %s has generated the code `%s` for the store1" % (
                                     message.author.name, code))
@@ -853,14 +910,14 @@ class MyClient(discord.Client):
                         if tokens - preis > 0:
                             await message.channel.send("Are you sure you want to buy this? Y/N")
                             yn = await client.wait_for("message", check=c, timeout=None)
-                            if yn == "y":
+                            if yn.content == "y":
                                 tzt = tokens - preis
                                 cur.execute("UPDATE tokens SET ggtokens=? WHERE userid=?", (tzt, message.author.id))
                                 conn.commit()
                                 code = str(random.randint(0, 9)) + str(random.randint(0, 9)) + random.choice(
                                     string.ascii_uppercase)
                                 await message.author.send(content="Succesfull! Your Code is: %s" % (code))
-                                adminchan = message.guild.get_channel()
+                                adminchan = message.guild.get_channel(415845094521044992)
                                 await adminchan.send(
                                     content="The User %s has generated the code `%s` for the store1" % (
                                     message.author.name, code))
@@ -875,20 +932,45 @@ class MyClient(discord.Client):
                         if tokens - preis > 0:
                             await message.channel.send("Are you sure you want to buy this? Y/N")
                             yn = await client.wait_for("message", check=c, timeout=None)
-                            if yn == "y":
+                            if yn.content == "y":
                                 tzt = tokens - preis
                                 cur.execute("UPDATE tokens SET ggtokens=? WHERE userid=?", (tzt, message.author.id))
                                 conn.commit()
                                 code = str(random.randint(0, 9)) + str(random.randint(0, 9)) + random.choice(
                                     string.ascii_uppercase)
                                 await message.author.send(content="Succesfull! Your Code is: %s" % (code))
-                                adminchan = message.guild.get_channel()
+                                adminchan = message.guild.get_channel(415845094521044992)
                                 await adminchan.send(
                                     content="The User %s has generated the code `%s` for the store1" % (
                                     message.author.name, code))
                     except:
                         await message.channel.send(content="Either this entry has not been made or you don't have enough money.")
 
+            elif invoke=="vote":
+                def c(m):
+                    if m.author.id == message.author.id and m.channel.id == message.channel.id:
+                        return m
+                arole = discord.utils.get(message.guild.roles, id=411811474780979201)
+                for meb in arole.members:
+                    if meb.id == message.author.id:
+                        await message.channel.send(content="Please send me now the heading")
+                        heading = await client.wait_for("message", check=c, timeout=None)
+                        await message.channel.send(content="Please send me now the description")
+                        des = await client.wait_for("message", check=c, timeout=None)
+                        await message.channel.send(content="Please send me now how many users could vote")
+                        votes = await client.wait_for("message", check=c, timeout=None)
+                        chan = message.guild.get_channel(416862932249608192)
+                        msg = await chan.send(content="**%s**\n%s" % (heading.content, des.content))
+                        await msg.add_reaction("✅")
+                        await msg.add_reaction("❌")
+                        cur.execute("SELECT canvote FROM voting")
+                        ex = cur.fetchall()
+                        if str(ex) != "[]":
+                            cur.execute("UPDATE voting SET canvote=?, hasvoted=?", (int(votes.content), 0))
+                            conn.commit()
+                        else:
+                            cur.execute("INSERT INTO voting (canvote) VALUES(?)", (int(votes.content),))
+                            conn.commit()
                         # EXAMPLE
                         '''
             elif invoke=="event":
@@ -902,6 +984,77 @@ class MyClient(discord.Client):
                         if meb.id == message.author.id:
                                 
                         '''
+
+    async def on_raw_reaction_add(self, emoji, message_id, channel_id, user_id):
+        if channel_id == 416862932249608192:
+            if str(emoji) == "✅":
+                cur.execute("SELECT hasvoted FROM voting")
+                ex = cur.fetchall()
+                if str(ex) != "[]":
+                    cur.execute("SELECT hasvoted FROM voting")
+                    vo = cur.fetchone()[0]
+                    vos = int(vo)+1
+                    cur.execute("UPDATE voting SET hasvoted=?", (vos,))
+                    conn.commit()
+                    cur.execute("SELECT canvote FROM voting")
+                    maxvo = cur.fetchone()[0]
+                    print(maxvo)
+                    print(vo)
+                    if maxvo == vo:
+                        gu = client.get_channel(channel_id)
+                        guild = gu.guild.id
+                        gugui = client.get_guild(guild)
+                        await gu.send(content="Voting has ended!")
+                else:
+                    cur.execute("INSERT INTO voting (hasvoted) VALUES(?)", (1,))
+                    conn.commit()
+
+            else:
+                cur.execute("SELECT hasvoted FROM voting")
+                ex = cur.fetchall()
+                if str(ex) != "[]":
+                    cur.execute("SELECT hasvoted FROM voting")
+                    vo = cur.fetchone()[0]
+                    vos = int(vo) + 1
+                    cur.execute("UPDATE voting SET hasvoted=?", (vos,))
+                    conn.commit()
+                    cur.execute("SELECT canvote FROM voting")
+                    maxvo = cur.fetchone()[0]
+                    if maxvo == vo:
+                        gu = client.get_channel(channel_id)
+                        guild = gu.guild.id
+                        gugui = client.get_guild(guild)
+                        await gu.send(content="Voting has ended!")
+                else:
+                    cur.execute("INSERT INTO voting (hasvoted) VALUES(?)", (1,))
+                    conn.commit()
+
+    async def on_raw_reaction_remove(self, emoji, message_id, channel_id, user_id):
+        if channel_id == 416862932249608192:
+            if str(emoji) == "✅":
+                cur.execute("SELECT hasvoted FROM voting")
+                ex = cur.fetchall()
+                if str(ex) != "[]":
+                    cur.execute("SELECT hasvoted FROM voting")
+                    vo = cur.fetchone()[0]
+                    vos = int(vo) - 1
+                    cur.execute("UPDATE voting SET hasvoted=?", (vos,))
+                    conn.commit()
+                else:
+                    ch = await client.get_user(250055619107749888)
+                    await ch.send(content="Sorry! The voting doesnt work because there is a reaction removed but no reaction was added")
+            else:
+                cur.execute("SELECT hasvoted FROM voting")
+                ex = cur.fetchall()
+                if str(ex) != "[]":
+                    cur.execute("SELECT hasvoted FROM voting")
+                    vo = cur.fetchone()[0]
+                    vos = int(vo) - 1
+                    cur.execute("UPDATE voting SET hasvoted=?", (vos,))
+                    conn.commit()
+                else:
+                    ch = await client.get_user(250055619107749888)
+                    await ch.send(content="Sorry! The voting doesnt work because there is a reaction removed but no reaction was added")
 
 
 client = MyClient()
