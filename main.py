@@ -10,7 +10,6 @@ conn = sqlite3.connect("database.db")
 cur = conn.cursor()
 
 
-# await asyncio.sleep(0.5)
 
 async def nachricht(message, channel):
     chan = client.get_channel(channel)
